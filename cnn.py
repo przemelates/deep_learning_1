@@ -6,18 +6,18 @@ from __future__ import print_function
 import keras
 from keras.datasets import fashion_mnist
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Flatten
+from keras.layers import Dense, Dropout, Flatten,BatchNormalization,Activation
 from keras.layers import Conv2D, MaxPooling2D
 from keras import backend as K
 
 batch_size = 128
 num_classes = 10
-epochs = 5
+epochs = 20
 
-# input image dimensions
+
 img_rows, img_cols = 28, 28
 
-# the data, shuffled and split between train and test sets
+
 (x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
 
 if K.image_data_format() == 'channels_first':
@@ -37,24 +37,53 @@ print('x_train shape:', x_train.shape)
 print(x_train.shape[0], 'train samples')
 print(x_test.shape[0], 'test samples')
 
-# convert class vectors to binary class matrices
+#convert class vectors to binary class matrices
 y_train = keras.utils.to_categorical(y_train, num_classes)
 y_test = keras.utils.to_categorical(y_test, num_classes)
 
 model = Sequential()
-model.add(Conv2D(32, kernel_size=(3, 3),
-                 activation='relu',
-                 input_shape=input_shape))
-model.add(Conv2D(64, (3, 3), activation='relu'))
+
+
+model.add(Conv2D(32, kernel_size=(3, 3), padding='same', input_shape=input_shape))
+model.add(BatchNormalization())
+model.add(Activation('silu'))
+model.add(Conv2D(32, kernel_size=(3, 3), padding='same'))
+model.add(BatchNormalization())
+model.add(Activation('silu'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Dropout(0.25))
+
+
+model.add(Conv2D(64, kernel_size=(3, 3), padding='same'))
+model.add(BatchNormalization())
+model.add(Activation('silu'))
+model.add(Conv2D(64, kernel_size=(3, 3), padding='same'))
+model.add(BatchNormalization())
+model.add(Activation('silu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(0.25))
+
+model.add(Conv2D(128, kernel_size=(3, 3), padding='same'))
+model.add(BatchNormalization())
+model.add(Activation('silu'))
+model.add(Conv2D(128, kernel_size=(3, 3), padding='same'))
+model.add(BatchNormalization())
+model.add(Activation('silu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(0.25))
+
+
 model.add(Flatten())
-model.add(Dense(128, activation='relu'))
+model.add(Dense(256))
+model.add(BatchNormalization())
+model.add(Activation('silu'))
 model.add(Dropout(0.5))
 model.add(Dense(num_classes, activation='softmax'))
 
+model.summary()
+
 model.compile(loss=keras.losses.categorical_crossentropy,
-              optimizer=keras.optimizers.Adadelta(),
+              optimizer=keras.optimizers.Adam(),
               metrics=['accuracy'])
 
 model.fit(x_train, y_train,

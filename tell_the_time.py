@@ -15,8 +15,8 @@ NUM_CLASSES = 720
 Data pre-processing
 '''
 
-data_path = "/home/przemelates/.vscode/deeplearning/images.npy"
-labels_path = "/home/przemelates/.vscode/deeplearning/labels.npy"
+data_path = "/home/przemelates/.vscode/deep_learning_1/images.npy"
+labels_path = "/home/przemelates/.vscode/deep_learning_1/labels.npy"
 
 data = np.load(data_path)
 labels = np.load(labels_path)
