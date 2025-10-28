@@ -100,7 +100,7 @@ model.compile(
     metrics=['mae']  
 )
 
-#Add learning rate scheduling
+
 lr_schedule = keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss',
     factor=0.5,
