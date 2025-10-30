@@ -1,6 +1,7 @@
 import tensorflow as tf
 import keras
 import numpy as np
+import matplotlib.pyplot as plt
 
 '''
 Constants
@@ -238,3 +239,46 @@ minute_errors = np.abs(pred_minutes - true_minutes)
 minute_errors = np.minimum(minute_errors, 60 - minute_errors)  #Handle wraparound
 print(f'Average hour error: {hour_errors.mean():.2f} hours')
 print(f'Average minute error: {minute_errors.mean():.2f} minutes')
+
+def plot_learning_curves(history, save_path='learning_curves_multihead.png'):
+    """
+    Plot training and validation learning curves.
+    """
+
+    metrics = [key for key in history.history.keys() if not key.startswith('val_')]
+    
+    #Determine number of subplots needed
+    n_metrics = len(metrics)
+    fig, axes = plt.subplots(1, n_metrics, figsize=(6 * n_metrics, 5))
+    if n_metrics == 1:
+        axes = [axes]
+    
+    for idx, metric in enumerate(metrics):
+        ax = axes[idx]
+        
+        #Training metric
+        train_values = history.history[metric]
+        epochs = range(1, len(train_values) + 1)
+        ax.plot(epochs, train_values, 'b-o', label=f'Training {metric}', markersize=4)
+        
+        #Validation metric 
+        val_metric = f'val_{metric}'
+        if val_metric in history.history:
+            val_values = history.history[val_metric]
+            ax.plot(epochs, val_values, 'r-s', label=f'Validation {metric}', markersize=4)
+        
+        ax.set_xlabel('Epoch', fontsize=12)
+        ax.set_ylabel(metric.capitalize(), fontsize=12)
+        ax.set_title(f'{metric.capitalize()} vs Epoch', fontsize=14, fontweight='bold')
+        ax.legend(loc='best')
+        ax.grid(True, alpha=0.3)
+        
+        #Set y-axis to start from 0 for accuracy metrics
+        if 'acc' in metric.lower():
+            ax.set_ylim(bottom=0)
+    
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+    plt.show()
+
+plot_learning_curves(history)
