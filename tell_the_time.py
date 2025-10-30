@@ -6,7 +6,7 @@ import numpy as np
 Constants
 '''
 IMG_HEIGHT, IMG_WIDTH = 75, 75
-EPOCHS = 30
+EPOCHS = 100
 BATCH_SIZE = 128
 
 '''
@@ -165,11 +165,40 @@ print(f'Hour Accuracy: {hour_accuracy:.2%}')
 print(f'Minute Accuracy: {minute_accuracy:.2%}')
 print(f'Exact Match (both correct): {exact_match:.2%}')
 
-#Calculate average angular error
-hour_error = np.abs(pred_hours - true_hours)
-hour_error = np.minimum(hour_error, 12 - hour_error)  
-minute_error = np.abs(pred_minutes - true_minutes)
-minute_error = np.minimum(minute_error, 60 - minute_error)  
+#Calculate "common sense" time difference accuracy
+def calculate_time_difference_minutes(true_hours, true_minutes, pred_hours, pred_minutes):
+    """
+    Calculate absolute time difference in minutes, handling circular clock arithmetic.
+    For example: 11:50 to 12:10 = 20 minutes (not 11 hours 40 minutes)
+    """
+    #Convert to total minutes since midnight
+    true_total_minutes = true_hours * 60 + true_minutes
+    pred_total_minutes = pred_hours * 60 + pred_minutes
+    
+    #Calculate raw difference
+    diff = np.abs(true_total_minutes - pred_total_minutes)
+    
+    #Handle wrap-around (e.g., 11:50 vs 00:10)
+    #Clock wraps at 12 hours = 720 minutes
+    diff = np.minimum(diff, 720 - diff)
+    
+    return diff
 
-print(f'Average Hour Error: {hour_error.mean():.2f} hours')
-print(f'Average Minute Error: {minute_error.mean():.2f} minutes')
+def format_time_difference(minutes):
+    """Convert minutes to 'X hours Y minutes' format"""
+    hours = int(minutes // 60)
+    mins = int(minutes % 60)
+    return hours, mins
+
+time_diffs = calculate_time_difference_minutes(true_hours, true_minutes, pred_hours, pred_minutes)
+
+#Calculate average error in hours and minutes format
+avg_error_hours, avg_error_mins = format_time_difference(time_diffs.mean())
+median_error_hours, median_error_mins = format_time_difference(np.median(time_diffs))
+
+print(f'\n"Common Sense" Time Difference Accuracy:')
+print(f'Average error: {avg_error_hours} hour(s) and {avg_error_mins} minute(s)')
+print(f'  (Total: {time_diffs.mean():.2f} minutes)')
+print(f'Median error: {median_error_hours} hour(s) and {median_error_mins} minute(s)')
+print(f'  (Total: {np.median(time_diffs):.2f} minutes)')
+print(f'Std deviation: {time_diffs.std():.2f} minutes')

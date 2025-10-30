@@ -6,7 +6,7 @@ import numpy as np
 Constants
 '''
 IMG_HEIGHT, IMG_WIDTH = 75, 75
-EPOCHS = 30
+EPOCHS = 100
 BATCH_SIZE = 128
 NUM_CLASSES = 720  
 
@@ -112,7 +112,7 @@ callbacks = [
     ),
     keras.callbacks.EarlyStopping(
         monitor='val_loss',
-        patience=7,
+        patience=10,
         restore_best_weights=True,
         verbose=1
     ),
@@ -181,11 +181,22 @@ def calculate_time_difference_minutes(true_hours, true_minutes, pred_hours, pred
     diff = np.minimum(diff, 720 - diff)
     
     return diff
+def format_time_difference(minutes):
+    """Convert minutes to 'X hours Y minutes' format"""
+    hours = int(minutes // 60)
+    mins = int(minutes % 60)
+    return hours, mins
 
 time_diffs = calculate_time_difference_minutes(true_hours, true_minutes, pred_hours, pred_minutes)
 
+#Calculate average error in hours and minutes format
+avg_error_hours, avg_error_mins = format_time_difference(time_diffs.mean())
+median_error_hours, median_error_mins = format_time_difference(np.median(time_diffs))
+
 print(f'\n"Common Sense" Time Difference Accuracy:')
-print(f'Mean absolute error: {time_diffs.mean():.2f} minutes')
-print(f'Median absolute error: {np.median(time_diffs):.2f} minutes')
+print(f'Average error: {avg_error_hours} hour(s) and {avg_error_mins} minute(s)')
+print(f'  (Total: {time_diffs.mean():.2f} minutes)')
+print(f'Median error: {median_error_hours} hour(s) and {median_error_mins} minute(s)')
+print(f'  (Total: {np.median(time_diffs):.2f} minutes)')
 print(f'Std deviation: {time_diffs.std():.2f} minutes')
-print(f'  Worst case (max error): {time_diffs.max():.0f} minutes')
+

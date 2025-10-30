@@ -6,10 +6,10 @@ import numpy as np
 Constants
 '''
 IMG_HEIGHT, IMG_WIDTH = 75, 75
-EPOCHS = 30
+EPOCHS = 100
 BATCH_SIZE = 128
-NUM_HOUR_CLASSES = 12  # 0-11
-NUM_MINUTE_CLASSES = 60  # 0-59
+NUM_HOUR_CLASSES = 12  
+NUM_MINUTE_CLASSES = 60  
 
 '''
 Data pre-processing
@@ -26,8 +26,8 @@ if len(data.shape) == 3:
     data = np.expand_dims(data, axis=-1)
 
 #Keep labels separate for multi-output
-hour_labels = labels[:, 0]  # 0-11
-minute_labels = labels[:, 1]  # 0-59
+hour_labels = labels[:, 0]  
+minute_labels = labels[:, 1]  
 
 print(f"Hour labels range: {hour_labels.min()} to {hour_labels.max()}")
 print(f"Minute labels range: {minute_labels.min()} to {minute_labels.max()}")
@@ -142,7 +142,7 @@ callbacks = [
     ),
     keras.callbacks.EarlyStopping(
         monitor='val_loss',
-        patience=7,
+        patience=10,
         restore_best_weights=True,
         verbose=1
     ),
@@ -175,6 +175,7 @@ print(f'Hour loss: {scores[1]:.4f}')
 print(f'Minute loss: {scores[2]:.4f}')
 print(f'Hour accuracy: {scores[3]:.4f} ({scores[3]*100:.2f}%)')
 print(f'Minute accuracy: {scores[4]:.4f} ({scores[4]*100:.2f}%)')
+
 
 #Get predictions
 predictions = model.predict(test_dataset)
@@ -213,10 +214,27 @@ def calculate_time_difference_minutes(true_hours, true_minutes, pred_hours, pred
     
     return diff
 
+def format_time_difference(minutes):
+    """Convert minutes to 'X hours Y minutes' format"""
+    hours = int(minutes // 60)
+    mins = int(minutes % 60)
+    return hours, mins
+
 time_diffs = calculate_time_difference_minutes(true_hours, true_minutes, pred_hours, pred_minutes)
 
+# Calculate average error in hours and minutes format
+avg_error_hours, avg_error_mins = format_time_difference(time_diffs.mean())
+median_error_hours, median_error_mins = format_time_difference(np.median(time_diffs))
+
 print(f'\n"Common Sense" Time Difference Accuracy:')
-print(f'Mean absolute error: {time_diffs.mean():.2f} minutes')
-print(f'Median absolute error: {np.median(time_diffs):.2f} minutes')
+print(f'Average error: {avg_error_hours} hour(s) and {avg_error_mins} minute(s)')
+print(f'  (Total: {time_diffs.mean():.2f} minutes)')
+print(f'Median error: {median_error_hours} hour(s) and {median_error_mins} minute(s)')
+print(f'  (Total: {np.median(time_diffs):.2f} minutes)')
 print(f'Std deviation: {time_diffs.std():.2f} minutes')
-print(f'  Worst case (max error): {time_diffs.max():.0f} minutes')
+hour_errors = np.abs(pred_hours - true_hours)
+hour_errors = np.minimum(hour_errors, 12 - hour_errors)  #Handle wraparound
+minute_errors = np.abs(pred_minutes - true_minutes)
+minute_errors = np.minimum(minute_errors, 60 - minute_errors)  #Handle wraparound
+print(f'Average hour error: {hour_errors.mean():.2f} hours')
+print(f'Average minute error: {minute_errors.mean():.2f} minutes')
